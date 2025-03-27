@@ -2,3 +2,9 @@
 /aplication.xlsx
 /INSTRUCTION.md
 /venv
+/cvs
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class

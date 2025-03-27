@@ -2,6 +2,7 @@ import requests
 from PyPDF2 import PdfReader
 from io import BytesIO
 import re
+import os
 import google.generativeai as genai
 from config import GEMINI_MODEL, MAX_FILE_SIZE, ALLOWED_FILE_TYPES
 from utils import rate_limited_request, download_file, download_file_from_drive
@@ -66,6 +67,35 @@ class TextExtractionAgent:
                 
         except Exception as e:
             return f"Error extracting text: {str(e)}"
+    
+    def extract_text_from_local_file(self, filepath):
+        """Extract text from a local file"""
+        try:
+            # Check if file exists
+            if not os.path.exists(filepath):
+                return f"Error: File not found: {filepath}"
+            
+            # Get file size
+            file_size = os.path.getsize(filepath)
+            if file_size > MAX_FILE_SIZE:
+                return f"Error: File too large ({file_size} bytes)"
+            
+            # Check file extension
+            _, ext = os.path.splitext(filepath)
+            ext = ext.lower()
+            
+            # Process based on file type
+            if ext == '.pdf':
+                with open(filepath, 'rb') as f:
+                    return self._extract_pdf_text(f.read())
+            elif ext in ['.doc', '.docx']:
+                with open(filepath, 'rb') as f:
+                    return self._extract_text_with_gemini(f.read())
+            else:
+                return f"Error: Unsupported file type: {ext}"
+                
+        except Exception as e:
+            return f"Error extracting text from local file: {str(e)}"
     
     def _extract_file_id(self, link):
         """Extract Google Drive file ID from various link formats"""

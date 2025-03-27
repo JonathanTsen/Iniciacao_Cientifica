@@ -26,7 +26,7 @@ def main():
     print("=" * 50)
     print("This application will:")
     print("1. Read candidate information from an Excel file")
-    print("2. Download and extract text from resumes")
+    print("2. Read CVs from the local 'cvs' folder")
     print("3. Analyze if candidates meet the specified criteria")
     print("4. Update the 'Primeira Fase' column with results\n")
     
@@ -36,6 +36,11 @@ def main():
     # Check if the file exists
     if not os.path.exists(excel_path) or not excel_path.endswith(('.xlsx', '.xls')):
         print(f"Error: File '{excel_path}' does not exist or is not an Excel file.")
+        return
+    
+    # Check if the cvs folder exists
+    if not os.path.exists("cvs") or not os.path.isdir("cvs"):
+        print("Error: 'cvs' folder does not exist. Please create a folder named 'cvs' and place all CVs there.")
         return
     
     # Create and run the agent chain
