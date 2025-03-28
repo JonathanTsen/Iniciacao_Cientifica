@@ -44,5 +44,6 @@ COLUMN_NAMES = {
     "email": "Email",
     "phone": "Telefone",
     "linkedin": "Link do LinkedIn", 
-    "result": "Primeira Fase"
+    "result": "Primeira Fase",
+    "pdf_filename": "PDF_Filename"
 } 

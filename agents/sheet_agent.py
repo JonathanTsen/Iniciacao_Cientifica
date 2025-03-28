@@ -8,20 +8,28 @@ class SheetAgent:
         """Initialize the sheet agent with the Excel file path"""
         self.excel_path = excel_path
         self.df = pd.read_excel(excel_path)
-        self._validate_columns()
+        self._validate_and_prepare_columns()
     
-    def _validate_columns(self):
-        """Validate that the Excel file has the required columns"""
+    def _validate_and_prepare_columns(self):
+        """Validate that the Excel file has the required columns and create missing ones if needed"""
         required_columns = [
             COLUMN_NAMES["timestamp"], 
             COLUMN_NAMES["resume_link"], 
             COLUMN_NAMES["name"],
-            COLUMN_NAMES["result"]
+            COLUMN_NAMES["pdf_filename"]
         ]
         
-        missing_columns = [col for col in required_columns if col not in self.df.columns]
-        if missing_columns:
-            raise ValueError(f"Excel file is missing required columns: {', '.join(missing_columns)}")
+        # Check for required columns that cannot be automatically created
+        essential_columns = [col for col in required_columns if col not in self.df.columns]
+        if essential_columns:
+            raise ValueError(f"Excel file is missing essential columns: {', '.join(essential_columns)}")
+        
+        # Add the result column if it doesn't exist
+        if COLUMN_NAMES["result"] not in self.df.columns:
+            print(f"Adding missing column: {COLUMN_NAMES['result']}")
+            self.df[COLUMN_NAMES["result"]] = None
+            # Save the updated dataframe with the new column
+            self.save_results()
     
     def get_candidates(self):
         """Returns the dataframe with all candidates"""

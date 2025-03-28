@@ -30,10 +30,6 @@ class AgentChain:
         print(f"Already processed: {summary['processed']} candidates")
         print(f"Remaining to process: {summary['remaining']} candidates")
         
-        # Get list of CV files from the folder
-        cv_files = [f for f in os.listdir(self.cv_folder) if os.path.isfile(os.path.join(self.cv_folder, f))]
-        print(f"Found {len(cv_files)} CV files in '{self.cv_folder}' folder")
-        
         # Create checkpoint counter
         candidates_since_save = 0
         
@@ -48,19 +44,9 @@ class AgentChain:
                 current = index + 1
                 print(f"\nProcessing candidate {current}/{summary['total']}: {row[COLUMN_NAMES['name']]}")
                 
-                # Find the matching CV file for this candidate
-                candidate_name = row[COLUMN_NAMES['name']].strip().lower()
-                matching_file = None
-                
-                for file in cv_files:
-                    # Check if filename contains candidate name or vice versa
-                    if candidate_name in file.lower() or any(name_part in file.lower() 
-                                                      for name_part in candidate_name.split() if len(name_part) > 3):
-                        matching_file = file
-                        break
-                
-                if not matching_file:
-                    print(f"Error: No matching CV file found for {row[COLUMN_NAMES['name']]}")
+                # Check if there's a PDF_Filename for this candidate
+                if pd.isna(row[COLUMN_NAMES['pdf_filename']]):
+                    print(f"Error: No PDF file linked for {row[COLUMN_NAMES['name']]}")
                     self.sheet_agent.update_candidate_status(index, "Erro")
                     # Increment the candidates processed counter
                     candidates_since_save += 1
@@ -69,8 +55,20 @@ class AgentChain:
                     candidates_since_save = 0
                     continue
                 
+                # Get the PDF filename from the column
+                pdf_filename = row[COLUMN_NAMES['pdf_filename']]
+                cv_path = os.path.join(self.cv_folder, pdf_filename)
+                
+                # Check if the file exists
+                if not os.path.exists(cv_path):
+                    print(f"Error: CV file not found at {cv_path}")
+                    self.sheet_agent.update_candidate_status(index, "Erro")
+                    # Save immediately after errors
+                    self.sheet_agent.save_results()
+                    candidates_since_save = 0
+                    continue
+                
                 # Extract text from CV file
-                cv_path = os.path.join(self.cv_folder, matching_file)
                 print(f"Extracting resume from: {cv_path}")
                 resume_text = self.extraction_agent.extract_text_from_local_file(cv_path)
                 

@@ -30,8 +30,8 @@ def main():
     print("3. Analyze if candidates meet the specified criteria")
     print("4. Update the 'Primeira Fase' column with results\n")
     
-    # Use a relative path for the Excel file in the same directory
-    excel_path = "aplication.xlsx"
+    # Use aplication_updated.xlsx to access the PDF_Filename column
+    excel_path = "aplication_updated.xlsx"
     
     # Check if the file exists
     if not os.path.exists(excel_path) or not excel_path.endswith(('.xlsx', '.xls')):

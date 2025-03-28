@@ -28,17 +28,21 @@ def main():
         if 'Processed_Result' not in df.columns:
             df['Processed_Result'] = None
     
-    # Count valid PDF filenames
+    # Count valid PDF filenames - only those that were successfully downloaded
     valid_pdfs = df['PDF_Filename'].notna().sum()
     if valid_pdfs == 0:
-        print("No PDF files were downloaded. Please run download_cvs.py first.")
+        print("No PDF files were downloaded successfully. Please run download_cvs.py first.")
         sys.exit(1)
+    
+    # Count failed downloads
+    failed_downloads = (df['Download_Status'] == 'FAILED').sum() if 'Download_Status' in df.columns else 0
     
     # Count already processed PDFs
     already_processed = df['Processed_Result'].notna().sum()
-    remaining_to_process = df['PDF_Filename'].notna().sum() - already_processed
+    remaining_to_process = valid_pdfs - already_processed
     
     print(f"Found {valid_pdfs} PDFs to process.")
+    print(f"Failed downloads: {failed_downloads}")
     print(f"Already processed: {already_processed}")
     print(f"Remaining to process: {remaining_to_process}")
     
@@ -48,7 +52,7 @@ def main():
     # Process each PDF
     processed_count = 0
     for index, row in df.iterrows():
-        # Skip rows without PDF filenames
+        # Skip rows without PDF filenames - either not downloaded or failed downloads
         if pd.isna(row['PDF_Filename']):
             continue
         
@@ -62,6 +66,8 @@ def main():
         # Check if the PDF exists
         if not os.path.exists(pdf_path):
             print(f"Warning: PDF file not found for {person_name}: {pdf_path}")
+            df.at[index, 'Processed_Result'] = "ERROR: PDF file not found"
+            df.to_excel('aplication_processed.xlsx', index=False)
             continue
         
         try:
@@ -81,15 +87,24 @@ def main():
             print("Progress saved to aplication_processed.xlsx")
             
         except Exception as e:
-            print(f"Error processing PDF for {person_name}: {e}")
+            error_msg = f"Error processing PDF for {person_name}: {e}"
+            print(error_msg)
+            # Record the error in the dataframe
+            df.at[index, 'Processed_Result'] = f"ERROR: {str(e)}"
             # Still save progress after errors
             df.to_excel('aplication_processed.xlsx', index=False)
     
     # Make sure the final updated Excel file is saved
     df.to_excel('aplication_processed.xlsx', index=False)
     
+    # Calculate final statistics
+    successful_processing = df['Processed_Result'].notna().sum() - df['Processed_Result'].str.startswith('ERROR:').sum() if 'Processed_Result' in df.columns else 0
+    error_processing = df['Processed_Result'].str.startswith('ERROR:').sum() if 'Processed_Result' in df.columns else 0
+    
     print("\nAll PDFs processed.")
-    print(f"Total PDFs processed: {df['Processed_Result'].notna().sum()}")
+    print(f"Total CVs successfully processed: {successful_processing}")
+    print(f"Total CVs with processing errors: {error_processing}")
+    print(f"Total CVs that failed to download: {failed_downloads}")
     print("Updated Excel file saved as 'aplication_processed.xlsx'")
 
 if __name__ == "__main__":
